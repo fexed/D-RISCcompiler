@@ -39,6 +39,7 @@ int parseCommand(char *buff) {
 	if (strcmp(buff, "ADD") == 0) 		{ return 0; }
 	else if (strcmp(buff, "ADDI") == 0)	{ return 24; }
 	else if (strcmp(buff, "SUB") == 0)	{ return 1; }
+	else if (strcmp(buff, "SUBI") == 0)	{ return 25; }
 	else if (strcmp(buff, "MUL") == 0)	{ return 2; }
 	else if (strcmp(buff, "DIV") == 0)	{ return 3; }
 	
@@ -109,6 +110,27 @@ int execCommand(int command, char* params, int* registers) {
 		}
 		registers[R3] = registers[R1] - registers[R2];
 		printf("R%d - R%d -> R%d\n", R1, R2, R3);
+	} else if (command == 25) { //R1 - n -> R3
+		int R1, R2, R3;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, '#');
+		 	R2 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R3
+			tokens = strchr(tokens, 'R');
+		 	R3 = atoi(++tokens);
+		}
+		registers[R3] = registers[R1] - R2;
+		printf("R%d - %d -> R%d\n", R1, R2, R3);
 	}
 }
 
