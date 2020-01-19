@@ -35,6 +35,9 @@
 	24 ADDI r n r
 	25 SUBI r n r
 */
+
+int output = -1;
+
 int parseCommand(char *buff) {
 	if 		(strcmp(buff, "ADD") == 0) 		{ return 0; }
 	else if (strcmp(buff, "ADDI") == 0)		{ return 24; }
@@ -42,9 +45,6 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "SUBI") == 0)		{ return 25; }
 	else if (strcmp(buff, "MUL") == 0)		{ return 2; }
 	else if (strcmp(buff, "DIV") == 0)		{ return 3; }
-	else if (strcmp(buff, "AND") == 0)		{ return 4; }
-	else if (strcmp(buff, "OR") == 0)		{ return 5; }
-	else if (strcmp(buff, "NOT") == 0)		{ return 6; }
 	else if (strcmp(buff, "LOAD") == 0)		{ return 7; }
 	else if (strcmp(buff, "STORE") == 0)	{ return 8; }
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
@@ -75,7 +75,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] + registers[R2];
-		printf("R%d + R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("R%d + R%d -> R%d\n", R1, R2, R3);
 	} else if (command == 24) { //R1 + n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -96,7 +96,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] + R2;
-		printf("R%d + %d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("R%d + %d -> R%d\n", R1, R2, R3);
 	} else if (command == 1) { //R1 - R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -117,7 +117,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] - registers[R2];
-		printf("R%d - R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("R%d - R%d -> R%d\n", R1, R2, R3);
 	} else if (command == 25) { //R1 - n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -138,8 +138,8 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] - R2;
-		printf("R%d - %d -> R%d\n", R1, R2, R3);
-	}  else if (command == 21) { //R1 = 0
+		if (output == 0) printf("R%d - %d -> R%d\n", R1, R2, R3);
+	} else if (command == 21) { //R1 = 0
 		int R1;
 		char* tokens;
 		char* save_ptr;
@@ -149,7 +149,49 @@ int execCommand(int command, char* params, int* registers) {
 		 	R1 = atoi(++tokens);
 		}
 		registers[R1] = 0;
-		printf("0 -> R%d\n", R1);
+		if (output == 0) printf("0 -> R%d\n", R1);
+	} else if (command == 2) { //R1 * R2 -> R3
+		int R1, R2, R3;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R3
+			tokens = strchr(tokens, 'R');
+		 	R3 = atoi(++tokens);
+		}
+		registers[R3] = registers[R1] * registers[R2];
+		if (output == 0) printf("R%d * R%d -> R%d\n", R1, R2, R3);
+	} else if (command == 3) { //R1 / R2 -> R3
+		int R1, R2, R3;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R3
+			tokens = strchr(tokens, 'R');
+		 	R3 = atoi(++tokens);
+		}
+		registers[R3] = registers[R1] / registers[R2];
+		if (output == 0) printf("R%d / R%d -> R%d\n", R1, R2, R3);
 	}
 }
 
@@ -174,7 +216,8 @@ int main(int argc, char *argv[]) {
 	int cmd, code, i;
 	int *registers;
 	
-	if (argc != 2) { printf("Usage: %s <D-RISC file>", argv[0]); return -1;}
+	if (argc < 2) { printf("Usage: %s <D-RISC file> [-v]", argv[0]); return -1;}
+	if (argc == 3) { if (strcmp(argv[2], "-v") == 0) output = 0; }
 	
 	inputfile = fopen(argv[1], "r");
 	registers = calloc(64, sizeof(int));
