@@ -8,10 +8,10 @@
 */
 
 /*
-	*0 ADD r r r
-	*1 SUB r r r
-	*2 MUL
-	*3 DIV
+	**0 ADD r r r
+	**1 SUB r r r
+	**2 MUL
+	**3 DIV
 	*4 AND
 	*5 OR
 	*6 NOT
@@ -32,8 +32,8 @@
 	*21 CLEAR
 	22 SHR
 	23 SHL
-	24 ADDI r n r
-	25 SUBI r n r
+	**24 ADDI r n r
+	**25 SUBI r n r
 */
 
 int output = -1;
@@ -50,6 +50,7 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
 	else if (strcmp(buff, "GOTO") == 0)		{ return 20; }
 	else if (strcmp(buff, "CLEAR") == 0)	{ return 21; }
+	else if (strcmp(buff, "END") == 0)		{ return -2; }
 	else return -1;
 }
 
@@ -191,6 +192,9 @@ int execCommand(int command, char* params, int* registers) {
 		}
 		registers[R3] = registers[R1] / registers[R2];
 		if (output == 0) printf("R%d / R%d -> R%d\n", R1, R2, R3);
+	} else if (command == 20) { //GOTO
+		if (output == 0) printf("GOTO %s\n", params);
+		return -2;
 	}
 	
 	return -1;
@@ -211,9 +215,18 @@ void printRegisters(int* registers) {
 	}
 }
 
+int lookFor(char* needle, char** haystack, int haystackLen) {
+	int i;
+	for (i = 0; i < haystackLen; i++) {
+		if (haystack[i] != NULL)
+			if (strcmp(needle, haystack[i]) == 0) return i;
+	}
+	return -1;
+}
+
 int main(int argc, char *argv[]) {
 	FILE *inputfile;
-	char **program, *command, *params, *control;
+	char **tags, **commands, **params, *control, *paramsCpy;
 	int cmd, i, newi, lines = 0;
 	int *registers;
 	
@@ -225,31 +238,66 @@ int main(int argc, char *argv[]) {
 	registers[0] = malloc(sizeof(int));
 	registers[0] = 0; //R0 contiene sempre 0
 	for (i = 1; i < 64; i++) { registers[i] = malloc(sizeof(int)); registers[i] = 0; }
-	program = malloc(sizeof(char));
+	commands = malloc(sizeof(char));
+	params = malloc(sizeof(char));
+	tags = malloc(sizeof(char));
 	
+	if (output == 0) printf("Inizio lettura e analisi del programma.\n");
+	char *buff = malloc(20*sizeof(char));;
 	do {
 		lines++;
-		program = realloc(program, lines*(30*sizeof(char)));
-		program[lines-1] = malloc(30*sizeof(char));
-		control = fgets(program[lines-1], 30, inputfile);
+		
+		tags = realloc(tags, lines*(30*sizeof(char)));
+		tags[lines-1] = malloc(30*sizeof(char));
+		
+		commands = realloc(commands, lines*(30*sizeof(char)));
+		commands[lines-1] = malloc(30*sizeof(char));
+		
+		params = realloc(params, lines*(30*sizeof(char)));
+		params[lines-1] = malloc(30*sizeof(char));
+		
+		control = fgets(buff, 30, inputfile);
+		if (control != NULL) {
+			if (strchr(buff, ':') != NULL) {
+				memcpy(tags[lines-1], strtok(buff, ":") , 30);
+				memcpy(commands[lines-1], strtok(NULL, " "), 30);
+				memcpy(params[lines-1], strtok(NULL, "\n"), 30);
+			} else if (strcmp(buff, "END") == 0) {
+				tags[lines-1] = NULL;
+				memcpy(commands[lines-1], strtok(buff, " "), 30);
+				params[lines-1] = NULL;
+			} else {
+				tags[lines-1] = NULL;
+				memcpy(commands[lines-1], strtok(buff, " "), 30);
+				memcpy(params[lines-1], strtok(NULL, "\n"), 30);
+			}
+			if (output == 0) {
+				printf("%d.%s\t[%s]\t%s\n", lines-1, (tags[lines-1] == NULL) ? "" : tags[lines-1], commands[lines-1], (params[lines-1] == NULL) ? "" : params[lines-1]);
+			}
+		}
 	} while (control != NULL);
+	free(buff);
 	fclose(inputfile);
-	if (output == 0) printf("Lettura del programma completata, %d righe lette.\nInizio esecuzione\n", lines);
+	if (output == 0) printf("Lettura del programma completata, %d righe lette.\nInizio esecuzione\n", lines-1);
 	
 	for (i = 0; i < lines; i++) {
 		if (output == 0) printf("%d.\t", i);
-		command = strtok(program[i], " ");
-		params = strtok(NULL, "\n");
-		cmd = parseCommand(command);
-		newi = execCommand(cmd, params, registers);
-		if (newi != -1) i = newi;
+		cmd = parseCommand(commands[i]);
+		if (cmd == -2) break; //END
+		paramsCpy = malloc(strlen(params[i])*sizeof(char));
+		memcpy(paramsCpy, params[i], strlen(params[i]));
+		newi = execCommand(cmd, paramsCpy, registers);
+		if (newi == -2) {
+			newi = lookFor(params[i], tags, lines);
+			if (newi != -1) i = newi-1;
+		}
+		free(paramsCpy);
 	}
 	if (output == 0) printf("END\n");
 	
-	free(program);
-	
 	printRegisters(registers);
 	free(registers);
+	free(tags);
 	
 	return 0;
 }
