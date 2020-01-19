@@ -236,11 +236,13 @@ int main(int argc, char *argv[]) {
 	if (output == 0) printf("Lettura del programma completata, %d righe lette.\nInizio esecuzione\n", lines);
 	
 	for (i = 0; i < lines; i++) {
+		if (output == 0) printf("%d.\t", i);
 		command = strtok(program[i], " ");
 		params = strtok(NULL, "\n");
 		cmd = parseCommand(command);
 		execCommand(cmd, params, registers);
 	}
+	if (output == 0) printf("END\n");
 	
 	free(program);
 	
