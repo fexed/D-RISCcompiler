@@ -8,16 +8,16 @@
 */
 
 /*
-	0 ADD r r r
-	1 SUB r r r
-	2 MUL
-	3 DIV
-	4 AND
-	5 OR
-	6 NOT
-	7 LOAD r r r
-	8 STORE r r r
-	9 EXCHANGE
+	*0 ADD r r r
+	*1 SUB r r r
+	*2 MUL
+	*3 DIV
+	*4 AND
+	*5 OR
+	*6 NOT
+	*7 LOAD r r r
+	*8 STORE r r r
+	*9 EXCHANGE
 	10 IF>
 	11 IF<
 	12 IF=
@@ -28,20 +28,28 @@
 	17 IF=0
 	18 IF<=0
 	19 IF>=0
-	20 GOTO
-	21 CLEAR
+	*20 GOTO
+	*21 CLEAR
 	22 SHR
 	23 SHL
 	24 ADDI r n r
 	25 SUBI r n r
 */
 int parseCommand(char *buff) {
-	if (strcmp(buff, "ADD") == 0) 		{ return 0; }
-	else if (strcmp(buff, "ADDI") == 0)	{ return 24; }
-	else if (strcmp(buff, "SUB") == 0)	{ return 1; }
-	else if (strcmp(buff, "SUBI") == 0)	{ return 25; }
-	else if (strcmp(buff, "MUL") == 0)	{ return 2; }
-	else if (strcmp(buff, "DIV") == 0)	{ return 3; }
+	if 		(strcmp(buff, "ADD") == 0) 		{ return 0; }
+	else if (strcmp(buff, "ADDI") == 0)		{ return 24; }
+	else if (strcmp(buff, "SUB") == 0)		{ return 1; }
+	else if (strcmp(buff, "SUBI") == 0)		{ return 25; }
+	else if (strcmp(buff, "MUL") == 0)		{ return 2; }
+	else if (strcmp(buff, "DIV") == 0)		{ return 3; }
+	else if (strcmp(buff, "AND") == 0)		{ return 4; }
+	else if (strcmp(buff, "OR") == 0)		{ return 5; }
+	else if (strcmp(buff, "NOT") == 0)		{ return 6; }
+	else if (strcmp(buff, "LOAD") == 0)		{ return 7; }
+	else if (strcmp(buff, "STORE") == 0)	{ return 8; }
+	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
+	else if (strcmp(buff, "GOTO") == 0)		{ return 20; }
+	else if (strcmp(buff, "CLEAR") == 0)	{ return 21; }
 	
 	return -1;
 }
@@ -131,6 +139,17 @@ int execCommand(int command, char* params, int* registers) {
 		}
 		registers[R3] = registers[R1] - R2;
 		printf("R%d - %d -> R%d\n", R1, R2, R3);
+	}  else if (command == 21) { //R1 = 0
+		int R1;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		registers[R1] = 0;
+		printf("0 -> R%d\n", R1);
 	}
 }
 
