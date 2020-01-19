@@ -50,8 +50,7 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
 	else if (strcmp(buff, "GOTO") == 0)		{ return 20; }
 	else if (strcmp(buff, "CLEAR") == 0)	{ return 21; }
-	
-	return -1;
+	else return -1;
 }
 
 int execCommand(int command, char* params, int* registers) {
@@ -193,6 +192,8 @@ int execCommand(int command, char* params, int* registers) {
 		registers[R3] = registers[R1] / registers[R2];
 		if (output == 0) printf("R%d / R%d -> R%d\n", R1, R2, R3);
 	}
+	
+	return -1;
 }
 
 void printRegisters(int* registers) {
@@ -213,7 +214,7 @@ void printRegisters(int* registers) {
 int main(int argc, char *argv[]) {
 	FILE *inputfile;
 	char **program, *command, *params, *control;
-	int cmd, i, lines = 0;
+	int cmd, i, newi, lines = 0;
 	int *registers;
 	
 	if (argc < 2) { printf("Usage: %s <D-RISC file> [-v]", argv[0]); return -1;}
@@ -240,7 +241,8 @@ int main(int argc, char *argv[]) {
 		command = strtok(program[i], " ");
 		params = strtok(NULL, "\n");
 		cmd = parseCommand(command);
-		execCommand(cmd, params, registers);
+		newi = execCommand(cmd, params, registers);
+		if (newi != -1) i = newi;
 	}
 	if (output == 0) printf("END\n");
 	
