@@ -48,6 +48,7 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "LOAD") == 0)		{ return 7; }
 	else if (strcmp(buff, "STORE") == 0)	{ return 8; }
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
+	else if (strcmp(buff, "IF>") == 0)		{ return 10; }
 	else if (strcmp(buff, "GOTO") == 0)		{ return 20; }
 	else if (strcmp(buff, "CLEAR") == 0)	{ return 21; }
 	else if (strcmp(buff, "END") == 0)		{ return -2; }
@@ -75,7 +76,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] + registers[R2];
-		if (output == 0) printf("R%d + R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d + %d -> R%d\n", registers[R1], registers[R2], R3);
 	} else if (command == 24) { //R1 + n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -96,7 +97,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] + R2;
-		if (output == 0) printf("R%d + %d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d + #%d -> R%d\n", registers[R1], R2, R3);
 	} else if (command == 1) { //R1 - R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -117,7 +118,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] - registers[R2];
-		if (output == 0) printf("R%d - R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d - %d -> R%d\n", registers[R1], registers[R2], R3);
 	} else if (command == 25) { //R1 - n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -138,7 +139,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] - R2;
-		if (output == 0) printf("R%d - %d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d - #%d -> R%d\n", registers[R1], R2, R3);
 	} else if (command == 21) { //R1 = 0
 		int R1;
 		char* tokens;
@@ -170,7 +171,7 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] * registers[R2];
-		if (output == 0) printf("R%d * R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d * %d -> R%d\n", registers[R1], registers[R2], R3);
 	} else if (command == 3) { //R1 / R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -184,6 +185,7 @@ int execCommand(int command, char* params, int* registers) {
 		if (tokens != NULL) { //R2
 			tokens = strchr(tokens, 'R');
 		 	R2 = atoi(++tokens);
+		 	if (R2 == 0) return -11;
 		}
 		tokens = strtok_r(NULL, ",", &save_ptr);
 		if (tokens != NULL) { //R3
@@ -191,7 +193,24 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		registers[R3] = registers[R1] / registers[R2];
-		if (output == 0) printf("R%d / R%d -> R%d\n", R1, R2, R3);
+		if (output == 0) printf("%d / %d -> R%d\n", registers[R1], registers[R2], R3);
+	} else if (command == 10) { //IF> R1 R2 tag
+		int R1, R2;
+		char *tokens, *tag;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		}
+		tag = strtok_r(NULL, "\n", &save_ptr);
+		if (output == 0) printf("%d > %d ? %s\n", registers[R1], registers[R2], tag);
+		if (registers[R1] > registers[R2]) return -3;
 	} else if (command == 20) { //GOTO
 		if (output == 0) printf("GOTO %s\n", params);
 		return -2;
@@ -218,8 +237,9 @@ void printRegisters(int* registers) {
 int lookFor(char* needle, char** haystack, int haystackLen) {
 	int i;
 	for (i = 0; i < haystackLen; i++) {
-		if (haystack[i] != NULL)
+		if (haystack[i] != NULL){
 			if (strcmp(needle, haystack[i]) == 0) return i;
+		}
 	}
 	return -1;
 }
@@ -284,14 +304,25 @@ int main(int argc, char *argv[]) {
 		if (output == 0) printf("%d.\t", i);
 		cmd = parseCommand(commands[i]);
 		if (cmd == -2) break; //END
-		paramsCpy = malloc(strlen(params[i])*sizeof(char));
+		paramsCpy = malloc((strlen(params[i])+1)*sizeof(char)); //TODO fix
 		memcpy(paramsCpy, params[i], strlen(params[i]));
 		newi = execCommand(cmd, paramsCpy, registers);
+		free(paramsCpy);
 		if (newi == -2) {
 			newi = lookFor(params[i], tags, lines);
 			if (newi != -1) i = newi-1;
+		} else if (newi == -3) {
+			paramsCpy = malloc((strlen(params[i])+1)*sizeof(char));
+			memcpy(paramsCpy, params[i], strlen(params[i]));
+			strtok(paramsCpy, ",");
+			strtok(NULL, ",");
+			paramsCpy = strtok(NULL, "\n");
+			newi = lookFor(++paramsCpy, tags, lines);
+			if (newi != -1) i = newi-1;
+		} else if (newi == -11) { //divisione per 0
+			printf("ERRORE divisione per 0");
+			return -1;
 		}
-		free(paramsCpy);
 	}
 	if (output == 0) printf("END\n");
 	
