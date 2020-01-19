@@ -197,7 +197,7 @@ int execCommand(int command, char* params, int* registers) {
 
 void printRegisters(int* registers) {
 	int i;
-	printf("\n\n***REGISTRI A FINE ESECUZIONE***\n");
+	printf("\n\n\t\t\t\t\t\tRegistri a fine esecuzione\n\n");
 	for (i = 0; i < 64; i += 8) {
 		printf("R%d = %d\t\t", i, registers[i]);
 		printf("R%d = %d\t\t", i+1, registers[i+1]);
@@ -212,8 +212,8 @@ void printRegisters(int* registers) {
 
 int main(int argc, char *argv[]) {
 	FILE *inputfile;
-	char *buff, *params;
-	int cmd, code, i;
+	char **program, *command, *params, *control;
+	int cmd, i, lines = 0;
 	int *registers;
 	
 	if (argc < 2) { printf("Usage: %s <D-RISC file> [-v]", argv[0]); return -1;}
@@ -224,25 +224,25 @@ int main(int argc, char *argv[]) {
 	registers[0] = malloc(sizeof(int));
 	registers[0] = 0; //R0 contiene sempre 0
 	for (i = 1; i < 64; i++) { registers[i] = malloc(sizeof(int)); registers[i] = 0; }
+	program = malloc(sizeof(char));
 	
 	do {
-		buff = malloc(10*sizeof(char));
-		params = malloc(20*sizeof(char));
-		code = fscanf(inputfile, "%s", buff);
-		
-		if (code != EOF && code > 0) {
-			cmd = parseCommand(buff);
-			fgets(params, 20, inputfile);
-			execCommand(cmd, params, registers);
-			
-			free(buff);
-			free(params);
-		}
-	} while (code != EOF);
-	
+		lines++;
+		program = realloc(program, lines*(30*sizeof(char)));
+		program[lines-1] = malloc(30*sizeof(char));
+		control = fgets(program[lines-1], 30, inputfile);
+	} while (control != NULL);
 	fclose(inputfile);
-	free(buff);
-	free(params);
+	if (output == 0) printf("Lettura del programma completata, %d righe lette.\nInizio esecuzione\n", lines);
+	
+	for (i = 0; i < lines; i++) {
+		command = strtok(program[i], " ");
+		params = strtok(NULL, "\n");
+		cmd = parseCommand(command);
+		execCommand(cmd, params, registers);
+	}
+	
+	free(program);
 	
 	printRegisters(registers);
 	free(registers);
