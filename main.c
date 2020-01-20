@@ -34,8 +34,8 @@
 	23 SHL
 	**24 ADDI r n r
 	**25 SUBI r n r
-	26 INC r
-	27 DEC r
+	**26 INC r
+	**27 DEC r
 */
 
 int output = -1;
