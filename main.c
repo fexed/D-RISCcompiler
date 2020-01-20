@@ -72,7 +72,7 @@ int parseCommand(char *buff) {
 	else return -1;
 }
 
-int execCommand(int command, char* params, int* registers) {
+int execCommand(int command, char* params, int* registers, int** memory, int* memorylen) {
 	if (command == 0) { //R1 + R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -404,7 +404,7 @@ int execCommand(int command, char* params, int* registers) {
 		}
 		if (output == 0) printf("M[%d + %d] -> R%d\n", registers[R1], registers[R2], R3);
 		srand(time(NULL));
-		registers[R3] = rand() % 100;
+		registers[R3] = load(registers[R1], registers[R2], memory, memorylen);
 	} else if (command == 8) { //STORE Rb, Ri, R
 	int R1, R2, R3;
 		char* tokens;
@@ -426,9 +426,71 @@ int execCommand(int command, char* params, int* registers) {
 		 	R3 = atoi(++tokens);
 		}
 		if (output == 0) printf("%d -> M[%d + %d]\n", R3, registers[R1], registers[R2]);
+		store(registers[R1], registers[R2], registers[R3], memory, memorylen);
 	}
 	
 	return -1;
+}
+
+int store(int rb, int ri, int data, int** memory, int* memorylen) {
+	int i;
+	if(*memorylen < rb) {
+		memory = realloc(memory, (rb+1)*sizeof(int));
+		*memorylen = rb;
+		for (i = 0; i < rb; i++) {
+			memory[i] = malloc(sizeof(int));
+			memory[i] = 0;
+		}
+		memory[rb] = malloc((ri+1)*sizeof(int));
+		for (i = 0; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		return 0;
+	}
+	if (memory[rb][0] == NULL) {
+		memory[rb] = malloc((ri+1)*sizeof(int));
+		for (i = 0; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		memory[rb][ri] = data;
+		return 0;
+	} else if (memory[rb][0] < ri) {
+		memory[rb] = realloc(memory[rb], (ri+1)*sizeof(int));
+		for (i = memory[rb][0]; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		memory[rb][ri] = data;
+		return 0;
+	} else {
+		memory[rb][ri] = data;
+		return 0;
+	}
+}
+
+int load(int rb, int ri, int** memory, int* memorylen) {
+	int i;
+	if(*memorylen < rb) {
+		memory = realloc(memory, (rb+1)*sizeof(int));
+		*memorylen = rb;
+		for (i = 0; i < rb; i++) {
+			memory[i] = malloc(sizeof(int));
+			memory[i] = 0;
+		}
+		memory[rb] = malloc((ri+1)*sizeof(int));
+		for (i = 0; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		return 0;
+	}
+	if (memory[rb][0] == NULL) {
+		memory[rb] = malloc((ri+1)*sizeof(int));
+		for (i = 0; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		return 0;
+	} else if (memory[rb][0] < ri) {
+		memory[rb] = realloc(memory[rb], (ri+1)*sizeof(int));
+		for (i = memory[rb][0]; i <= ri; i++) memory[rb][i] = malloc(sizeof(int));
+		memory[rb][0] = ri;
+		return 0;
+	} else {
+		return memory[rb][ri];
+	}
 }
 
 void printRegisters(int* registers) {
@@ -461,11 +523,14 @@ int main(int argc, char *argv[]) {
 	char **tags, **commands, **params, *control, *paramsCpy;
 	int cmd, i, newi, lines = 0;
 	int *registers;
+	int **memory, memorylen;
 	
 	if (argc < 2) { printf("Usage: %s <D-RISC file> [-v]", argv[0]); return -1;}
 	if (argc == 3) { if (strcmp(argv[2], "-v") == 0) output = 0; }
 	
 	inputfile = fopen(argv[1], "r");
+	memory = malloc(sizeof(int));
+	memorylen = -1;
 	registers = calloc(64, sizeof(int));
 	registers[0] = malloc(sizeof(int));
 	registers[0] = 0; //R0 contiene sempre 0
@@ -518,7 +583,7 @@ int main(int argc, char *argv[]) {
 		if (cmd == -2) break; //END
 		paramsCpy = malloc((strlen(params[i])+1)*sizeof(char)); //TODO fix
 		memcpy(paramsCpy, params[i], strlen(params[i]));
-		newi = execCommand(cmd, paramsCpy, registers);
+		newi = execCommand(cmd, paramsCpy, registers, memory, &memorylen);
 		free(paramsCpy);
 		if (newi == -2) {
 			newi = lookFor(params[i], tags, lines);
@@ -547,6 +612,8 @@ int main(int argc, char *argv[]) {
 	
 	printRegisters(registers);
 	free(registers);
+	free(memorylen);
+	free(memory);
 	free(tags);
 	
 	return 0;
