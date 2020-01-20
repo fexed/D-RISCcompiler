@@ -49,6 +49,9 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "DEC") == 0)		{ return 27; }
 	else if (strcmp(buff, "MUL") == 0)		{ return 2; }
 	else if (strcmp(buff, "DIV") == 0)		{ return 3; }
+	else if (strcmp(buff, "AND") == 0)		{ return 4; }
+	else if (strcmp(buff, "OR") == 0)		{ return 5; }
+	else if (strcmp(buff, "NOT") == 0)		{ return 6; }
 	else if (strcmp(buff, "LOAD") == 0)		{ return 7; }
 	else if (strcmp(buff, "STORE") == 0)	{ return 8; }
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
