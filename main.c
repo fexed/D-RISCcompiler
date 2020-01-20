@@ -88,8 +88,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] + registers[R2];
 		if (output == 0) printf("%d + %d -> R%d\n", registers[R1], registers[R2], R3);
+		registers[R3] = registers[R1] + registers[R2];
 	} else if (command == 24) { //R1 + n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -432,13 +432,13 @@ int main(int argc, char *argv[]) {
 		lines++;
 		
 		tags = realloc(tags, lines*(30*sizeof(char)));
-		tags[lines-1] = malloc(30*sizeof(char));
+		tags[lines-1] = calloc(30, sizeof(char));
 		
 		commands = realloc(commands, lines*(30*sizeof(char)));
-		commands[lines-1] = malloc(30*sizeof(char));
+		commands[lines-1] = calloc(30, sizeof(char));
 		
 		params = realloc(params, lines*(30*sizeof(char)));
-		params[lines-1] = malloc(30*sizeof(char));
+		params[lines-1] = calloc(30, sizeof(char));
 		
 		control = fgets(buff, 30, inputfile);
 		if (control != NULL) {
