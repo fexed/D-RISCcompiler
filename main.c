@@ -18,9 +18,9 @@
 	*7 LOAD r r r
 	*8 STORE r r r
 	*9 EXCHANGE
-	10 IF>
-	11 IF<
-	12 IF=
+	**10 IF>
+	*11 IF<
+	*12 IF=
 	13 IF<=
 	14 IF>=
 	15 IF>0
@@ -49,6 +49,8 @@ int parseCommand(char *buff) {
 	else if (strcmp(buff, "STORE") == 0)	{ return 8; }
 	else if (strcmp(buff, "EXCHANGE") == 0)	{ return 9; }
 	else if (strcmp(buff, "IF>") == 0)		{ return 10; }
+	else if (strcmp(buff, "IF<") == 0)		{ return 11; }
+	else if (strcmp(buff, "IF=") == 0)		{ return 12; }
 	else if (strcmp(buff, "GOTO") == 0)		{ return 20; }
 	else if (strcmp(buff, "CLEAR") == 0)	{ return 21; }
 	else if (strcmp(buff, "END") == 0)		{ return -2; }
@@ -96,8 +98,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] + R2;
 		if (output == 0) printf("%d + #%d -> R%d\n", registers[R1], R2, R3);
+		registers[R3] = registers[R1] + R2;
 	} else if (command == 1) { //R1 - R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -117,8 +119,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] - registers[R2];
 		if (output == 0) printf("%d - %d -> R%d\n", registers[R1], registers[R2], R3);
+		registers[R3] = registers[R1] - registers[R2];
 	} else if (command == 25) { //R1 - n -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -138,8 +140,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] - R2;
 		if (output == 0) printf("%d - #%d -> R%d\n", registers[R1], R2, R3);
+		registers[R3] = registers[R1] - R2;
 	} else if (command == 21) { //R1 = 0
 		int R1;
 		char* tokens;
@@ -149,8 +151,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R1 = atoi(++tokens);
 		}
-		registers[R1] = 0;
 		if (output == 0) printf("0 -> R%d\n", R1);
+		registers[R1] = 0;
 	} else if (command == 2) { //R1 * R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -170,8 +172,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] * registers[R2];
 		if (output == 0) printf("%d * %d -> R%d\n", registers[R1], registers[R2], R3);
+		registers[R3] = registers[R1] * registers[R2];
 	} else if (command == 3) { //R1 / R2 -> R3
 		int R1, R2, R3;
 		char* tokens;
@@ -192,8 +194,8 @@ int execCommand(int command, char* params, int* registers) {
 			tokens = strchr(tokens, 'R');
 		 	R3 = atoi(++tokens);
 		}
-		registers[R3] = registers[R1] / registers[R2];
 		if (output == 0) printf("%d / %d -> R%d\n", registers[R1], registers[R2], R3);
+		registers[R3] = registers[R1] / registers[R2];
 	} else if (command == 10) { //IF> R1 R2 tag
 		int R1, R2;
 		char *tokens, *tag;
@@ -209,8 +211,42 @@ int execCommand(int command, char* params, int* registers) {
 		 	R2 = atoi(++tokens);
 		}
 		tag = strtok_r(NULL, "\n", &save_ptr);
-		if (output == 0) printf("%d > %d ? %s\n", registers[R1], registers[R2], tag);
+		if (output == 0) printf("%d > %d ? ->%s\n", registers[R1], registers[R2], tag);
 		if (registers[R1] > registers[R2]) return -3;
+	} else if (command == 11) { //IF< R1 R2 tag
+		int R1, R2;
+		char *tokens, *tag;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		}
+		tag = strtok_r(NULL, "\n", &save_ptr);
+		if (output == 0) printf("%d < %d ? ->%s\n", registers[R1], registers[R2], tag);
+		if (registers[R1] < registers[R2]) return -3;
+	} else if (command == 12) { //IF= R1 R2 tag
+		int R1, R2;
+		char *tokens, *tag;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		}
+		tag = strtok_r(NULL, "\n", &save_ptr);
+		if (output == 0) printf("%d = %d ? ->%s\n", registers[R1], registers[R2], tag);
+		if (registers[R1] == registers[R2]) return -3;
 	} else if (command == 20) { //GOTO
 		if (output == 0) printf("GOTO %s\n", params);
 		return -2;
