@@ -4,6 +4,6 @@ ADDI R0, #3, R3
 loop:ADD R2, R2, R2
 SUB R2, R3, R3
 MUL R3, R3, R3
-SUBI R1, #1, R1
+DEC R1
 IF>0 R1, loop
 END
