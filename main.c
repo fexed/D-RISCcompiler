@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /**
 	Author: Federico Matteoni
@@ -381,6 +382,50 @@ int execCommand(int command, char* params, int* registers) {
 	} else if (command == 20) { //GOTO
 		if (output == 0) printf("GOTO %s\n", params);
 		return -2;
+	} else if (command == 7) { //LOAD Rb, Ri, R
+		int R1, R2, R3;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		 	if (R2 == 0) return -11;
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R3
+			tokens = strchr(tokens, 'R');
+		 	R3 = atoi(++tokens);
+		}
+		if (output == 0) printf("M[%d + %d] -> R%d\n", registers[R1], registers[R2], R3);
+		srand(time(NULL));
+		registers[R3] = rand() % 100;
+	} else if (command == 8) { //STORE Rb, Ri, R
+	int R1, R2, R3;
+		char* tokens;
+		char* save_ptr;
+		tokens = strtok_r(params, ",", &save_ptr);
+		if (tokens != NULL) { //R1
+			tokens = strchr(tokens, 'R');
+		 	R1 = atoi(++tokens);
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R2
+			tokens = strchr(tokens, 'R');
+		 	R2 = atoi(++tokens);
+		 	if (R2 == 0) return -11;
+		}
+		tokens = strtok_r(NULL, ",", &save_ptr);
+		if (tokens != NULL) { //R3
+			tokens = strchr(tokens, 'R');
+		 	R3 = atoi(++tokens);
+		}
+		if (output == 0) printf("%d -> M[%d + %d]\n", R3, registers[R1], registers[R2]);
 	}
 	
 	return -1;
